@@ -1,0 +1,5 @@
+streamlit==1.x.x
+pandas
+numpy
+scikit-learn
+pickle5            # または pickle が不要なら削除
