@@ -33,7 +33,7 @@ st.markdown("---")
 
 # --- モデル読み込み ---
 def load_models():
-    model_dir = 'C:/Users/dross/horseweight_predictor/models/'
+    model_dir = 'models'
     md  = joblib.load(f"{model_dir}/model_direct.pkl")
     mg  = joblib.load(f"{model_dir}/model_gain.pkl")
     cd  = joblib.load(f"{model_dir}/correction_direct.pkl")
