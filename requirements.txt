@@ -2,4 +2,4 @@ streamlit==1.35.0
 pandas
 numpy
 scikit-learn
-joblin
+joblib
