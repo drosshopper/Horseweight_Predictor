@@ -6,6 +6,7 @@ import joblib
 import pandas as pd
 import shap
 import uvicorn
+from catboost import CatBoostRegressor
 
 # 🎯 FastAPIアプリ
 app = FastAPI()
