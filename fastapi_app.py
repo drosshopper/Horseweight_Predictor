@@ -44,6 +44,7 @@ class InputData(BaseModel):
 @app.post("/predict")
 async def predict_with_shap(data: InputData, request: Request):
     referer = request.headers.get("referer", "")
+    print(f"🔍 Refererヘッダー: {referer}")
     allowed = [
         "huggingface.co",
         "spaces/drosshopper/horse-weight-predictor2",
