@@ -5,3 +5,4 @@ joblib
 pandas
 shap
 scikit-learn  # 必要なら
+catboost   ←これが不足している！
