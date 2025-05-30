@@ -44,13 +44,17 @@ class InputData(BaseModel):
 @app.post("/predict")
 async def predict_with_shap(data: InputData, request: Request):
     referer = request.headers.get("referer", "")
-    allowed = "huggingface.co/spaces/drosshopper/horse-weight-predictor2"
-    if not referer or allowed not in referer:
+    allowed = [
+        "huggingface.co",
+        "spaces/drosshopper/horse-weight-predictor2",
+        "https://huggingface.co/spaces/drosshopper/horse-weight-predictor2"
+    ]
+    if not any(a in referer for a in allowed):
         raise HTTPException(status_code=403, detail="外部からのアクセスは許可されていません")
     input_df = pd.DataFrame([data.dict()])
     shap_values = explainer(input_df)
 
-
+    
     
     # SHAPの出力から値を取り出し
     base_value = shap_values.base_values[0]
