@@ -11,6 +11,10 @@ from catboost import CatBoostRegressor
 # 🎯 FastAPIアプリ
 app = FastAPI()
 
+@app.get("/")
+def read_root():
+    return {"status": "ok"}
+
 # 🌐 CORS（Hugging Faceからのアクセス許可）
 app.add_middleware(
     CORSMiddleware,
