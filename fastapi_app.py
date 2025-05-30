@@ -1,5 +1,5 @@
 # fastapi_app.py
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import joblib
@@ -33,12 +33,21 @@ class InputData(BaseModel):
     measure: int
     daysold: int
 
+
+
+
 # SHAP値と変化量を返すエンドポイント
 @app.post("/predict")
-def predict_with_shap(data: InputData):
+async def predict_with_shap(data: InputData, request: Request):
+    referer = request.headers.get("referer", "")
+    allowed = "huggingface.co/spaces/drosshopper/horse-weight-predictor2"
+    if not referer or allowed not in referer:
+        raise HTTPException(status_code=403, detail="外部からのアクセスは許可されていません")
     input_df = pd.DataFrame([data.dict()])
     shap_values = explainer(input_df)
 
+
+    
     # SHAPの出力から値を取り出し
     base_value = shap_values.base_values[0]
     shap_contributions = shap_values.values[0].tolist()
