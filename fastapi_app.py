@@ -4,6 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import joblib
 import pandas as pd
+import shap
+import uvicorn
 
 # 🎯 FastAPIアプリ
 app = FastAPI()
@@ -19,6 +21,7 @@ app.add_middleware(
 
 # 📦 モデルの読み込み
 model = joblib.load("models/model_cat.pkl")  # ← Render上のmodelsフォルダに配置
+explainer = shap.Explainer(model)
 
 # 📥 入力データ形式
 class InputData(BaseModel):
@@ -29,12 +32,21 @@ class InputData(BaseModel):
     measure: int
     daysold: int
 
-# 📤 推論エンドポイント
+# SHAP値と変化量を返すエンドポイント
 @app.post("/predict")
-def predict(data: InputData):
-    df = pd.DataFrame([data.dict()])
-    gain_pred = model.predict(df)[0]
+def predict_with_shap(data: InputData):
+    input_df = pd.DataFrame([data.dict()])
+    shap_values = explainer(input_df)
+
+    # SHAPの出力から値を取り出し
+    base_value = shap_values.base_values[0]
+    shap_contributions = shap_values.values[0].tolist()
+    feature_names = shap_values.feature_names
+    gain_pred = model.predict(input_df)[0]
+
     return {
-        "gain_pred": round(gain_pred, 2),
-        "status": "success"
+        "gain_pred": gain_pred,
+        "base_value": base_value,
+        "contributions": shap_contributions,
+        "features": feature_names
     }
