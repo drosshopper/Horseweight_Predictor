@@ -1,6 +1,7 @@
 fastapi
-uvicorn[standard]
-pandas
+uvicorn
+pydantic
 joblib
-scikit-learn
+pandas
 shap
+scikit-learn  # 必要なら
