@@ -43,15 +43,6 @@ class InputData(BaseModel):
 # SHAP値と変化量を返すエンドポイント
 @app.post("/predict")
 async def predict_with_shap(data: InputData, request: Request):
-    referer = request.headers.get("referer", "")
-    print(f"🔍 Refererヘッダー: {referer}")
-    allowed = [
-        "huggingface.co",
-        "spaces/drosshopper/horse-weight-predictor2",
-        "https://huggingface.co/spaces/drosshopper/horse-weight-predictor2"
-    ]
-    if not any(a in referer for a in allowed):
-        raise HTTPException(status_code=403, detail="外部からのアクセスは許可されていません")
     input_df = pd.DataFrame([data.dict()])
     shap_values = explainer(input_df)
 
