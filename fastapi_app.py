@@ -70,7 +70,7 @@ async def predict_with_shap(data: InputData, request: Request):
     ref_df = df_all[df_all["graded_winner"] == 1].copy()
     ref_df = ref_df.dropna(subset=features)
 
-    weights = np.array([1, 1, 1, 3])
+    weights = np.array([5, 5, 2, 12])
     X_weighted = ref_df[features].values * weights
     x_input_weighted = input_vec * weights
 
