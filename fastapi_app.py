@@ -73,7 +73,7 @@ async def predict_with_shap(data: InputData, request: Request):
     X = ref_df[features].values
     
     # ✅ 重みの定義（自由に調整可能）
-    weights = np.array([1, 1, 0.5, 1,5])
+    weights = np.array([1, 1, 0.5, 1])
     
     # ✅ 共分散行列は全体で計算
     cov = np.cov(X, rowvar=False)
