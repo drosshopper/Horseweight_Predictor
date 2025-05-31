@@ -58,13 +58,13 @@ async def predict_with_shap(data: InputData, request: Request):
     pred_weight = data.weight_age1 + gain_pred
 
     # ✅ 名馬との類似度評価（マハラノビス距離）
-# ✅ 入力ベクトル
-input_vec = np.array([
-    data.height,
-    data.waist,
-    data.leg,
-    pred_weight
-])
+    # ✅ 入力ベクトル
+    input_vec = np.array([
+        data.height,
+        data.waist,
+        data.leg,
+        pred_weight
+    ])
 
     # ✅ データ読み込み
     df_all = pd.read_csv("models/WeightSuggestall.csv")
