@@ -67,7 +67,7 @@ async def predict_with_shap(data: InputData, request: Request):
 
     df_all = pd.read_csv("models/WeightSuggestall.csv")
     features = ["height", "waist", "leg", "result"]
-    ref_df = df_all[df_all["is_graded_winner"] == 1].copy()
+    ref_df = df_all[df_all["graded_winner"] == 1].copy()
     ref_df = ref_df.dropna(subset=features)
 
     weights = np.array([1, 1, 1, 3])
