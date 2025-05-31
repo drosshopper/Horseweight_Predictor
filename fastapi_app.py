@@ -10,6 +10,7 @@ from scipy.spatial import distance
 import uvicorn
 from catboost import CatBoostRegressor
 
+
 # 🎯 FastAPIアプリ
 app = FastAPI()
 
@@ -40,6 +41,14 @@ class InputData(BaseModel):
     measure: int
     daysold: int
 
+# ▶️ 類似度計算に使う重み（10kgに相当する単位変換）
+weights = np.array([1.0, 0.667, 2.0, 0.125])  # height, waist, leg, result
+
+# ▶️ 重み付きユークリッド距離関数
+def scaled_euclidean(x, y, weights):
+    diff = (x - y) * weights
+    return np.sqrt(np.sum(diff**2))
+
 
 # SHAP値と変化量を返すエンドポイント
 @app.post("/predict")
@@ -57,8 +66,7 @@ async def predict_with_shap(data: InputData, request: Request):
     gain_pred = model.predict(input_df_model)[0]
     pred_weight = data.weight_age1 + gain_pred
 
-    # ✅ 名馬との類似度評価（マハラノビス距離）
-    # ✅ 入力ベクトル
+    # ✅ 類似度評価（重み付きユークリッド距離）
     input_vec = np.array([
         data.height,
         data.waist,
@@ -66,41 +74,29 @@ async def predict_with_shap(data: InputData, request: Request):
         pred_weight
     ])
 
-    # ✅ データ読み込み
+    # 📦 参照データ読み込み
     df_all = pd.read_csv("models/WeightSuggestall.csv")
     features = ["height", "waist", "leg", "result"]
-    ref_df = df_all.dropna(subset=features).copy()  # 全馬対象に変更
+    ref_df = df_all.dropna(subset=features).copy()
     X = ref_df[features].values
-    
-    # ✅ 重みの定義（自由に調整可能）
-    weights = np.array([1, 1, 0.5, 1])
-    
-    # ✅ 共分散行列は全体で計算
-    cov = np.cov(X, rowvar=False)
-    inv_cov = np.linalg.inv(cov)
-    
-    # ✅ 重み付きマハラノビス距離関数
-    def weighted_mahalanobis(x, y, inv_cov, weights):
-        diff = (x - y) * weights
-        return np.sqrt(np.dot(np.dot(diff, inv_cov), diff.T))
-    
-    # ✅ 距離を全馬に対して計算
-    ref_df["mahalanobis"] = [
-        weighted_mahalanobis(row, input_vec, inv_cov, weights) for row in X
+
+    # ✅ 距離計算（scaled Euclidean）
+    ref_df["euclidean_distance"] = [
+        scaled_euclidean(row, input_vec, weights) for row in X
     ]
-    
-    # ✅ 重賞勝ち馬だけから最も近い馬を抽出（TOP3）
+
+    # ✅ 重賞馬に限定して類似TOP3を取得
     graded_matches = (
         ref_df[ref_df["graded_winner"] == 1]
-        .sort_values("mahalanobis")
+        .sort_values("euclidean_distance")
         .head(3)
     )
-    
+
     top_matches = []
     for _, row in graded_matches.iterrows():
         top_matches.append({
             "name": row.get("name", "不明"),
-            "distance": round(row["mahalanobis"], 3),
+            "distance": round(row["euclidean_distance"], 3),
             "features": {
                 "height": row["height"],
                 "waist": row["waist"],
@@ -108,6 +104,7 @@ async def predict_with_shap(data: InputData, request: Request):
                 "result": row["result"]
             }
         })
+
 
 
 
