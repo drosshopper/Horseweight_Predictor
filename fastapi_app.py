@@ -46,6 +46,27 @@ def mahalanobis_dist(x, y, VI):
     diff = x - y
     return np.sqrt(np.dot(np.dot(diff.T, VI), diff))
 
+# 🧠 管囲判定関数（比率に基づく）
+def judge_leg_ratio_extended(ratio: float) -> str:
+    if ratio <= 0.928:
+        return "極めて細い"
+    elif ratio <= 0.949:
+        return "非常に細い"
+    elif ratio <= 0.968:
+        return "細い"
+    elif ratio <= 0.979:
+        return "やや細い"
+    elif ratio <= 1.020:
+        return "標準"
+    elif ratio <= 1.032:
+        return "やや太い"
+    elif ratio <= 1.049:
+        return "太い"
+    elif ratio <= 1.069:
+        return "非常に太い"
+    else:
+        return "極めて太い"
+
 # SHAP値と変化量を返すエンドポイント
 @app.post("/predict")
 async def predict_with_shap(data: InputData, request: Request):
@@ -62,6 +83,13 @@ async def predict_with_shap(data: InputData, request: Request):
     gain_pred = model.predict(input_df_model)[0]
     pred_weight = data.weight_age1 + gain_pred
 
+
+    # 🦵 標準管囲の計算・診断
+    leg_pred = 6.1529196 + 0.0118197 * pred_weight + 0.0326342 * data.height + 0.0191873 * data.waist
+    leg_ratio = data.leg / leg_pred
+    leg_judge = judge_leg_ratio_extended(leg_ratio)
+
+    
     # ✅ 類似度評価（マハラノビス距離 + 指数スコア）
     input_vec = np.array([
         data.height,
@@ -118,6 +146,8 @@ async def predict_with_shap(data: InputData, request: Request):
         "base_value": base_value,
         "contributions": shap_contributions,
         "features": feature_names,
-        "top_matches": top_matches  # 👈 名馬類似度TOP3を追加
-
+        "top_matches": top_matches,
+        "leg_pred": leg_pred,
+        "leg_ratio": leg_ratio,
+        "leg_judge": leg_judge
     }
