@@ -66,44 +66,51 @@ async def predict_with_shap(data: InputData, request: Request):
     gain_pred = model.predict(input_df_model)[0]
     pred_weight = data.weight_age1 + gain_pred
 
-    # ✅ 類似度評価（重み付きユークリッド距離）
+    # ✅ 類似度評価（マハラノビス距離 + 指数スコア）
     input_vec = np.array([
         data.height,
         data.waist,
-        data.leg,
-        pred_weight
+        pred_weight  # ← 推論後の予測体重
     ])
-
+    
     # 📦 参照データ読み込み
     df_all = pd.read_csv("models/WeightSuggestall.csv")
-    features = ["height", "waist", "leg", "result"]
+    features = ["height", "waist", "result"]
     ref_df = df_all.dropna(subset=features).copy()
+    
+    # ✅ 共分散行列は全馬で構築
     X = ref_df[features].values
-
-    # ✅ 距離計算（scaled Euclidean）
-    ref_df["euclidean_distance"] = [
-        scaled_euclidean(row, input_vec, weights) for row in X
-    ]
-
-    # ✅ 重賞馬に限定して類似TOP3を取得
-    graded_matches = (
-        ref_df[ref_df["graded_winner"] == 1]
-        .sort_values("euclidean_distance")
-        .head(3)
-    )
-
+    cov_matrix = np.cov(X.T)
+    inv_cov_matrix = np.linalg.inv(cov_matrix)
+    
+    # ✅ 入力ベクトル（予測体重）
+    input_vec = np.array([data.height, data.waist, pred_weight])
+    
+    # ✅ 全馬に距離・スコアを付与
+    ref_df["distance"] = [mahalanobis_dist(input_vec, row, inv_cov_matrix) for row in X]
+    beta = 0.4
+    ref_df["score"] = 100 * np.exp(-beta * ref_df["distance"])
+    
+    # ✅ 重賞馬のみ抽出して上位3頭を返す
+    graded_df = ref_df[ref_df["graded_winner"] == 1].copy()
+    
     top_matches = []
-    for _, row in graded_matches.iterrows():
+    for _, row in graded_df.sort_values("score", ascending=False).head(3).iterrows():
         top_matches.append({
             "name": row.get("name", "不明"),
-            "distance": round(row["euclidean_distance"], 3),
+            "distance": round(row["distance"], 3),
+            "score": round(row["score"], 1),
             "features": {
                 "height": row["height"],
                 "waist": row["waist"],
-                "leg": row["leg"],
                 "result": row["result"]
-            }
+            },
+            "graded_titles": [
+                win for win in [row.get("win1"), row.get("win2"), row.get("win3")] if pd.notna(win)
+            ]
         })
+
+
 
 
 
