@@ -41,14 +41,10 @@ class InputData(BaseModel):
     measure: int
     daysold: int
 
-# ▶️ 類似度計算に使う重み（10kgに相当する単位変換）
-weights = np.array([1.0, 0.667, 2.0, 0.125])  # height, waist, leg, result
-
-# ▶️ 重み付きユークリッド距離関数
-def scaled_euclidean(x, y, weights):
-    diff = (x - y) * weights
-    return np.sqrt(np.sum(diff**2))
-
+# ▶️ マハラノビス距離関数（今回使用）
+def mahalanobis_dist(x, y, VI):
+    diff = x - y
+    return np.sqrt(np.dot(np.dot(diff.T, VI), diff))
 
 # SHAP値と変化量を返すエンドポイント
 @app.post("/predict")
