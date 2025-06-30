@@ -18,10 +18,13 @@ app = FastAPI()
 def read_root():
     return {"status": "ok"}
 
-# 🌐 CORS（Hugging Faceからのアクセス許可）
+# 🌐 CORS（Hugging Face 2スペースからのアクセスを許可）
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://huggingface.co/spaces/drosshopper/horse-weight-predictor2"],  # 本番環境では制限推奨
+    allow_origins=[
+        "https://huggingface.co/spaces/drosshopper/horse-weight-predictor2",
+        "https://huggingface.co/spaces/drosshopper/horse-weight-predictor-test"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
